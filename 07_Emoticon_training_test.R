@@ -8,8 +8,6 @@ library(randomForest) # random forest
 library(stringi)
 
 
-
-
 #-----------> 1. Pull database from MySQL <-----------#
 
 drv <- dbDriver("MySQL")
@@ -19,7 +17,7 @@ emoticons.groups <- dbReadTable(conn = con, name = "pvll_emoticons_in_groups")
 dbDisconnect(con)
 
 
-#-----------> Identify messages with emojis  <-----------#
+#-----------> 2. Identify messages with emojis  <-----------#
 
 emoji_encoding <- df[,"garbledMsg"]
 Encoding(emoji_encoding) <- "UTF-8"
@@ -30,7 +28,7 @@ f_contains.emoji <- as.numeric(f_contains.emoji)
 rm(emoji_encoding)
 
 
-#-----------> Reduce dataframe to just messages with emoticons  <-----------#
+#-----------> 3. Reduce dataframe to just messages with emoticons  <-----------#
 
 # reduce dataset to just emojis
 df<- df[f_contains.emoji == 1,]
@@ -43,12 +41,12 @@ for(i in 1:nrow(df)){
 }
 df <- df[emojies_used >= 1,]
 
-#-----------> Assign messages a unique identifier <-----------#
+#-----------> 4. Assign messages a unique identifier <-----------#
 
 messages <- df[,"garbledMsg"]
 
 
-#-----------> Assign cluster group to specific messages  <-----------#
+#-----------> 5. Assign cluster group to specific messages  <-----------#
 
 classify.message <- function(message){
   set <- c()
@@ -72,7 +70,7 @@ message_group <- sapply(messages,classify.message,USE.NAMES=FALSE)
 table(message_group)/sum(table(message_group))
 
 
-#-----------> Pull in feature data on messages  <-----------#
+#-----------> 6. Pull in feature data on messages  <-----------#
 
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, user="root", pass="",dbname="pvll")
@@ -80,7 +78,7 @@ df.features <- dbReadTable(conn = con, name = "pvll_trim_clean_features")
 dbDisconnect(con)
 
 
-#-----------> Trim feature data to be same length/structure as emoji labels  <-----------#
+#-----------> 7. Trim feature data to be same length/structure as emoji labels  <-----------#
 
 df.emojis <- df
 df.features.emojis <- df.features[f_contains.emoji==1,]
@@ -89,7 +87,7 @@ df.features.emojis <- df.features.emojis[emojies_used >= 1,]
 nrow(df.emojis) == nrow(df.features.emojis)
 
 
-#-----------> Set up training and testing set  <-----------#
+#-----------> 8. Set up training and testing set  <-----------#
 
 # take 90% of data for training and 10% for testing, assign testing/training randomly #
 n_train <- round(length(message_group)*0.9,0)
@@ -99,7 +97,7 @@ train <- df.features.emojis[X[1:n_train],]
 test <- df.features.emojis[X[n_train+1:n_test],]
 
 
-#-----------> Perform k-nearest neighbor on dataset  <-----------#
+#-----------> 9. Perform k-nearest neighbor on dataset  <-----------#
 
 #http://blog.webagesolutions.com/archives/1164
 set.k <- seq(1,60,2)
@@ -113,7 +111,7 @@ for(i in 1:length(set.k)){
   count <- count+1
 }
 
-#-----------> What to expect by chance? (re-weighted guess) <-----------#
+#-----------> 10. What to expect by chance? (re-weighted guess) <-----------#
 
 permutations <- c()
 for(i in 1:10000){
@@ -140,7 +138,7 @@ print(max(percent.correct)) # best prediction using k-nn
 
 
 
-#-----------> Best prediction using random forest <-----------#
+#-----------> 11. Best prediction using random forest <-----------#
 
 rf.values <- c()
 for(i in 1:10){
@@ -161,7 +159,7 @@ importance(fit.rf, type = 2) # V1, V2, and V10 are driving
 partialPlot(fit.rf)
 
 
-#-----------> Run model from random forest across full message dataset <-----------#
+#-----------> 12. Run model from random forest across full message dataset <-----------#
 
 # apply fully labeled emoticon dataset to build model #
 fit.rf.full <- randomForest(x=df.features.emojis,y=as.factor(message_group)) #takes longer then knn
@@ -176,7 +174,7 @@ axis(1,at=c(seq(0.5,11.5,by=(12/10))),labels=c(1:10))
 save(fit.rf.full,file="~/Desktop/Emoticon_prediction_model_randomforest.RData")
 
 
-#-----------> Frequency of predicted emoticon catagories in messages with and without emoticons <-----------#
+#-----------> 13. Frequency of predicted emoticon catagories in messages with and without emoticons <-----------#
 
 # Predict emoticon catagory in messages with emoticons #
 rf.prediction <- predict(fit.rf.full,df.features.emojis)
@@ -189,7 +187,7 @@ pie(table(rf.prediction) /sum(table(rf.prediction)),main = length(rf.prediction)
 pie(table(rf.prediction.full) / sum(table(rf.prediction.full)),cex=2, main=length(rf.prediction.full))
 
 
-#-----------> Bind observations to data frame and save <-----------#
+#-----------> 14. Bind observations to data frame and save <-----------#
 
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, user="root", pass="",dbname="pvll")
