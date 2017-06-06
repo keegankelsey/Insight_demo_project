@@ -1,5 +1,6 @@
-# Insight_demo_project January 2015
-# More details about the project may be found at keegankelsey.com/insightdemo
+# Insight Demo Project
+# January 2015
+# More details about the project may be found at http://www.keegankelsey.com/insightdemo/
 
 A. Background and objective: This project was in partnership with a text messaging service and assigned during the January 2015 session of Insight in Palo Alto. The broad goal was to assign a, "flavor" to each conversation, for which I took to mean a type of sentiment or tone. A file of over 3 million text messages were received from the partnering company, however the messages were all anonymized and masked, i.e, language was stripped from the message along with any unique identifier (sex of user, age, etc). Sentence structure, punctuation, and emotions were still present in the messages, and I was able to use this information to build sentiment labels for each message and then assign a sentiment to the full conversation. For example, a messages the normally would read as, "I'll see you at 8 tonight, okay??" came to me as, "A'aa aaa aaa aa 0 aaaaaaa, aaaa??"
 
